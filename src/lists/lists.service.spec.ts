@@ -60,7 +60,7 @@ describe('ListsService', () => {
   });
 
   describe('findAll', () => {
-    it('deve retornar as listas de um utilizador específico', async () => {
+    it('deve retornar as listas de um utilizador específico (próprias ou compartilhadas)', async () => {
       const mockLists = [mockShoppingList];
       prisma.shoppingList.findMany.mockResolvedValue(mockLists);
 
@@ -68,16 +68,27 @@ describe('ListsService', () => {
 
       expect(prisma.shoppingList.findMany).toHaveBeenCalledWith({
         where: {
-          usuarioId: mockUserId,
           status: 'ativa',
+          OR: [
+            { usuarioId: mockUserId },
+            { participantes: { some: { usuarioId: mockUserId } } },
+          ],
         },
         orderBy: {
           criadoEm: 'desc',
         },
-        include: {
+        select: {
+          id: true,
+          nome: true,
+          status: true,
+          criadoEm: true,
+          finalizadoEm: true,
+          usuarioId: true,
           itens: {
-            orderBy: {
-              nome: 'asc',
+            select: {
+              id: true,
+              preco: true,
+              quantidade: true,
             },
           },
         },

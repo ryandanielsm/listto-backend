@@ -8,13 +8,16 @@ export class ItemsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Valida se a lista existe e pertence ao usuário autenticado
+   * Valida se a lista existe e se o usuário autenticado tem acesso (como dono ou participante convidado/aceito)
    */
-  private async validateListOwnership(userId: string, listId: string) {
+  private async validateListAccess(userId: string, listId: string) {
     const list = await this.prisma.shoppingList.findFirst({
       where: {
         id: listId,
-        usuarioId: userId,
+        OR: [
+          { usuarioId: userId },
+          { participantes: { some: { usuarioId: userId } } },
+        ],
       },
     });
 
@@ -28,7 +31,7 @@ export class ItemsService {
   }
 
   async create(userId: string, listId: string, dto: CreateItemDto) {
-    await this.validateListOwnership(userId, listId);
+    await this.validateListAccess(userId, listId);
 
     return this.prisma.shoppingItem.create({
       data: {
@@ -43,7 +46,7 @@ export class ItemsService {
   }
 
   async findAll(userId: string, listId: string) {
-    await this.validateListOwnership(userId, listId);
+    await this.validateListAccess(userId, listId);
 
     return this.prisma.shoppingItem.findMany({
       where: {
@@ -61,7 +64,7 @@ export class ItemsService {
     itemId: string,
     dto: UpdateItemDto,
   ) {
-    await this.validateListOwnership(userId, listId);
+    await this.validateListAccess(userId, listId);
 
     const item = await this.prisma.shoppingItem.findFirst({
       where: {
@@ -83,7 +86,7 @@ export class ItemsService {
   }
 
   async remove(userId: string, listId: string, itemId: string) {
-    await this.validateListOwnership(userId, listId);
+    await this.validateListAccess(userId, listId);
 
     const item = await this.prisma.shoppingItem.findFirst({
       where: {
@@ -104,7 +107,7 @@ export class ItemsService {
   }
 
   async togglePurchased(userId: string, listId: string, itemId: string) {
-    await this.validateListOwnership(userId, listId);
+    await this.validateListAccess(userId, listId);
 
     const item = await this.prisma.shoppingItem.findFirst({
       where: {

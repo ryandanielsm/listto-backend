@@ -70,4 +70,30 @@ export class ListsController {
   ) {
     return this.listsService.complete(userId, id);
   }
+
+  @Post(':id/join')
+  join(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.listsService.joinList(userId, id);
+  }
+
+  @Get(':id/members')
+  getMembers(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.listsService.getMembers(userId, id);
+  }
+
+  @Delete(':id/members/:memberId')
+  removeMember(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+  ) {
+    return this.listsService.removeMember(userId, id, memberId);
+  }
 }
+
