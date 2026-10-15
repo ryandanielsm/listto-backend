@@ -37,6 +37,8 @@ model ShoppingList {
   itens         ShoppingItem[]
   participantes ListMember[]
 
+  @@index([usuarioId, status])
+  @@index([usuarioId])
   @@map("shopping_lists")
 }
 
@@ -52,6 +54,7 @@ model ShoppingItem {
 
   lista ShoppingList @relation(fields: [listaId], references: [id], onDelete: Cascade)
 
+  @@index([listaId])
   @@map("shopping_items")
 }
 

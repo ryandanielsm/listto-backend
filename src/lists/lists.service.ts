@@ -28,10 +28,17 @@ export class ListsService {
       orderBy: {
         criadoEm: 'desc',
       },
-      include: {
+      select: {
+        id: true,
+        nome: true,
+        status: true,
+        criadoEm: true,
+        finalizadoEm: true,
         itens: {
-          orderBy: {
-            nome: 'asc',
+          select: {
+            id: true,
+            preco: true,
+            quantidade: true,
           },
         },
       },
@@ -47,10 +54,17 @@ export class ListsService {
       orderBy: {
         finalizadoEm: 'desc',
       },
-      include: {
+      select: {
+        id: true,
+        nome: true,
+        status: true,
+        criadoEm: true,
+        finalizadoEm: true,
         itens: {
-          orderBy: {
-            nome: 'asc',
+          select: {
+            id: true,
+            preco: true,
+            quantidade: true,
           },
         },
       },
