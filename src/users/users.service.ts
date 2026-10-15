@@ -1,10 +1,22 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { IsOptional, IsString } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 export class UpdateProfileDto {
+  @IsOptional()
+  @IsString()
   nome?: string;
+
+  @IsOptional()
+  @IsString()
   email?: string;
+
+  @IsOptional()
+  @IsString()
   telefone?: string;
+
+  @IsOptional()
+  @IsString()
   foto?: string;
 }
 
