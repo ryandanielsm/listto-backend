@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 
-export interface UpdateProfileDto {
+export class UpdateProfileDto {
   nome?: string;
   email?: string;
   telefone?: string;
