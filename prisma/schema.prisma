@@ -1,0 +1,83 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id       String   @id @default(uuid()) @map("id")
+  nome     String   @map("nome")
+  email    String   @unique @map("email")
+  telefone String?  @map("telefone")
+  foto     String?  @map("foto")
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  listas        ShoppingList[]
+  participacoes ListMember[]
+  assinaturas   Subscription[]
+
+  @@map("users")
+}
+
+model ShoppingList {
+  id           String    @id @default(uuid()) @map("id")
+  usuarioId    String    @map("usuario_id")
+  nome         String    @map("nome")
+  status       String    @default("ativa") @map("status")
+  criadoEm     DateTime  @default(now()) @map("criado_em")
+  finalizadoEm DateTime? @map("finalizado_em")
+
+  usuario       User           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  itens         ShoppingItem[]
+  participantes ListMember[]
+
+  @@map("shopping_lists")
+}
+
+model ShoppingItem {
+  id         String  @id @default(uuid()) @map("id")
+  listaId    String  @map("lista_id")
+  nome       String  @map("nome")
+  quantidade Float   @map("quantidade")
+  unidade    String  @map("unidade")
+  preco      Float?  @map("preco")
+  categoria  String  @map("categoria")
+  comprado   Boolean @default(false) @map("comprado")
+
+  lista ShoppingList @relation(fields: [listaId], references: [id], onDelete: Cascade)
+
+  @@map("shopping_items")
+}
+
+model ListMember {
+  id        String   @id @default(uuid()) @map("id")
+  listaId   String   @map("lista_id")
+  usuarioId String   @map("usuario_id")
+  status    String   @default("convidado") @map("status")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  lista   ShoppingList @relation(fields: [listaId], references: [id], onDelete: Cascade)
+  usuario User         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([listaId, usuarioId])
+  @@map("list_members")
+}
+
+model Subscription {
+  id              String   @id @default(uuid()) @map("id")
+  usuarioId       String   @map("usuario_id")
+  plano           String   @map("plano")
+  status          String   @map("status")
+  inicio          DateTime @map("inicio")
+  proximaCobranca DateTime @map("proxima_cobranca")
+
+  usuario User @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
