@@ -106,7 +106,12 @@ export class ItemsService {
     });
   }
 
-  async togglePurchased(userId: string, listId: string, itemId: string) {
+  async togglePurchased(
+    userId: string,
+    listId: string,
+    itemId: string,
+    explicitComprado?: boolean,
+  ) {
     await this.validateListAccess(userId, listId);
 
     const item = await this.prisma.shoppingItem.findFirst({
@@ -120,12 +125,15 @@ export class ItemsService {
       throw new NotFoundException('Item não encontrado nesta lista.');
     }
 
+    const novoComprado =
+      typeof explicitComprado === 'boolean' ? explicitComprado : !item.comprado;
+
     return this.prisma.shoppingItem.update({
       where: {
         id: itemId,
       },
       data: {
-        comprado: !item.comprado,
+        comprado: novoComprado,
       },
     });
   }

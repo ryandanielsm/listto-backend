@@ -71,6 +71,15 @@ export class ListsController {
     return this.listsService.complete(userId, id);
   }
 
+  @Patch(':id/partial-complete')
+  partialComplete(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+    @Body() body?: { itemIds?: string[] },
+  ) {
+    return this.listsService.partialComplete(userId, id, body?.itemIds);
+  }
+
   @Post(':id/join')
   join(
     @CurrentUser('userId') userId: string,
@@ -96,4 +105,3 @@ export class ListsController {
     return this.listsService.removeMember(userId, id, memberId);
   }
 }
-

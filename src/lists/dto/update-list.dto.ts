@@ -5,4 +5,8 @@ export class UpdateListDto {
   @IsNotEmpty({ message: 'O nome da lista não pode ser vazio' })
   @IsOptional()
   nome?: string;
+
+  @IsString()
+  @IsOptional()
+  tipo?: string;
 }

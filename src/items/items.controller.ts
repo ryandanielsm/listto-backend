@@ -61,7 +61,18 @@ export class ItemsController {
     @CurrentUser('userId') userId: string,
     @Param('listId') listId: string,
     @Param('itemId') itemId: string,
+    @Body() body?: { comprado?: boolean },
   ) {
-    return this.itemsService.togglePurchased(userId, listId, itemId);
+    return this.itemsService.togglePurchased(userId, listId, itemId, body?.comprado);
+  }
+
+  @Patch(':itemId/toggle')
+  toggle(
+    @CurrentUser('userId') userId: string,
+    @Param('listId') listId: string,
+    @Param('itemId') itemId: string,
+    @Body() body?: { comprado?: boolean },
+  ) {
+    return this.itemsService.togglePurchased(userId, listId, itemId, body?.comprado);
   }
 }

@@ -30,6 +30,8 @@ model ShoppingList {
   usuarioId    String    @map("usuario_id")
   nome         String    @map("nome")
   status       String    @default("ativa") @map("status")
+  tipo         String    @default("pessoal") @map("tipo")
+  parcial      Boolean   @default(false) @map("parcial")
   criadoEm     DateTime  @default(now()) @map("criado_em")
   finalizadoEm DateTime? @map("finalizado_em")
 
