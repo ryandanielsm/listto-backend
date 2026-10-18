@@ -132,18 +132,108 @@ export class ListsService {
     const list = await this.findOne(userId, listId);
 
     if (list.usuarioId === userId) {
-      return this.prisma.shoppingList.delete({
+      // Exclui a lista ativa e em cascata itens e participantes
+      await this.prisma.shoppingList.delete({
         where: {
           id: listId,
         },
       });
+
+      // Também remove do histórico listas finalizadas com o mesmo nome pertencentes a este usuário
+      await this.prisma.shoppingList.deleteMany({
+        where: {
+          usuarioId: userId,
+          nome: list.nome,
+          status: 'finalizada',
+        },
+      });
+
+      return { sucesso: true, mensagem: 'Lista excluída com sucesso.' };
     } else {
-      return this.prisma.listMember.deleteMany({
+      return this.leave(userId, listId);
+    }
+  }
+
+  async leave(userId: string, listId: string) {
+    const list = await this.findOne(userId, listId);
+
+    if (list.usuarioId === userId) {
+      // O usuário é o dono da lista
+      const otherMembers = await this.prisma.listMember.findMany({
+        where: { listaId: listId },
+        orderBy: { criadoEm: 'asc' },
+      });
+
+      if (otherMembers.length > 0) {
+        // Transfere a titularidade para o participante mais antigo
+        const nextOwner = otherMembers[0];
+        await this.prisma.shoppingList.update({
+          where: { id: listId },
+          data: { usuarioId: nextOwner.usuarioId },
+        });
+
+        await this.prisma.listMember.delete({
+          where: { id: nextOwner.id },
+        });
+
+        // Transfere também histórico finalizado correspondente
+        const historicalLists = await this.prisma.shoppingList.findMany({
+          where: {
+            usuarioId: userId,
+            nome: list.nome,
+            status: 'finalizada',
+          },
+        });
+
+        for (const h of historicalLists) {
+          await this.prisma.shoppingList.update({
+            where: { id: h.id },
+            data: { usuarioId: nextOwner.usuarioId },
+          });
+        }
+
+        return { sucesso: true, mensagem: 'Você saiu da lista e a titularidade foi transferida.' };
+      } else {
+        // Não há outros participantes: exclui lista ativa e histórico correspondente
+        await this.prisma.shoppingList.deleteMany({
+          where: {
+            OR: [
+              { id: listId },
+              { usuarioId: userId, nome: list.nome, status: 'finalizada' },
+            ],
+          },
+        });
+        return { sucesso: true, mensagem: 'Você saiu da lista e ela foi removida.' };
+      }
+    } else {
+      // Participante convidado saindo
+      await this.prisma.listMember.deleteMany({
         where: {
           listaId: listId,
           usuarioId: userId,
         },
       });
+
+      // Também remove dos registros no histórico dessa lista compartilhada
+      const historicalLists = await this.prisma.shoppingList.findMany({
+        where: {
+          nome: list.nome,
+          status: 'finalizada',
+          participantes: { some: { usuarioId: userId } },
+        },
+        select: { id: true },
+      });
+
+      if (historicalLists.length > 0) {
+        await this.prisma.listMember.deleteMany({
+          where: {
+            listaId: { in: historicalLists.map((h) => h.id) },
+            usuarioId: userId,
+          },
+        });
+      }
+
+      return { sucesso: true, mensagem: 'Você saiu da lista e do histórico com sucesso.' };
     }
   }
 

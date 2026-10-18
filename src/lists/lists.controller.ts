@@ -63,6 +63,14 @@ export class ListsController {
     return this.listsService.remove(userId, id);
   }
 
+  @Delete(':id/leave')
+  leave(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.listsService.leave(userId, id);
+  }
+
   @Patch(':id/complete')
   complete(
     @CurrentUser('userId') userId: string,
