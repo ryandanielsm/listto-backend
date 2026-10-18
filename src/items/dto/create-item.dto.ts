@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, Min, IsString, ValidateIf } from 'class-validator';
+import { IsNotEmpty, IsNumber, Min, IsString, ValidateIf, IsArray, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateItemDto {
@@ -24,4 +24,9 @@ export class CreateItemDto {
   @IsString()
   @IsNotEmpty({ message: 'A categoria é obrigatória' })
   categoria: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  fotos?: string[];
 }

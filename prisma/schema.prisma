@@ -51,8 +51,9 @@ model ShoppingItem {
   quantidade Float   @map("quantidade")
   unidade    String  @map("unidade")
   preco      Float?  @map("preco")
-  categoria  String  @map("categoria")
-  comprado   Boolean @default(false) @map("comprado")
+  categoria  String   @map("categoria")
+  fotos      String[] @default([]) @map("fotos")
+  comprado   Boolean  @default(false) @map("comprado")
 
   lista ShoppingList @relation(fields: [listaId], references: [id], onDelete: Cascade)
 

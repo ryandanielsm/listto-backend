@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, Min, IsString, ValidateIf } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, Min, IsString, ValidateIf, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateItemDto {
@@ -33,4 +33,9 @@ export class UpdateItemDto {
   @IsBoolean()
   @IsOptional()
   comprado?: boolean;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  fotos?: string[];
 }

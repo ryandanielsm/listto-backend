@@ -41,6 +41,7 @@ export class ItemsService {
         unidade: dto.unidade,
         preco: dto.preco,
         categoria: dto.categoria,
+        fotos: dto.fotos || [],
       },
     });
   }
