@@ -30,8 +30,9 @@ export class SubscriptionsService {
           if (res.ok) {
             const payment = await res.json();
             if (payment?.status === 'approved') {
-              this.logger.log(`Pagamento Pix #${paymentId} aprovado no Mercado Pago! Ativando assinatura do usuário ${userId}`);
-              const activated = await this.activateSubscription(userId, 'Listto Premium');
+              const planoEscolhido = payment?.metadata?.plano || 'Plano Mensal';
+              this.logger.log(`Pagamento Pix #${paymentId} aprovado no Mercado Pago (${planoEscolhido})! Ativando assinatura do usuário ${userId}`);
+              const activated = await this.activateSubscription(userId, planoEscolhido);
               activeSub = activated.subscription;
             }
           }
@@ -44,6 +45,7 @@ export class SubscriptionsService {
     if (activeSub) {
       return {
         isPremium: true,
+        isAssinante: true,
         plano: activeSub.plano,
         status: activeSub.status,
         inicio: activeSub.inicio,
@@ -53,13 +55,27 @@ export class SubscriptionsService {
 
     return {
       isPremium: false,
+      isAssinante: false,
       plano: 'Plano Gratuito',
       status: 'ativo',
     };
   }
 
-  async createPixPayment(userId?: string, userEmail?: string, userName?: string) {
+  async createPixPayment(
+    userId?: string,
+    userEmail?: string,
+    userName?: string,
+    planoEscolhido: string = 'mensal',
+  ) {
     const mpAccessToken = process.env.MP_ACCESS_TOKEN || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+
+    const isAnual = planoEscolhido?.toLowerCase()?.includes('anual') || planoEscolhido === '1 year';
+    const valor = isAnual ? 59.90 : 6.90;
+    const planoNome = isAnual ? 'Plano Anual' : 'Plano Mensal';
+    const periodo = isAnual ? '1 year' : '1 month';
+    const description = isAnual
+      ? 'Assinatura Listto - Plano Anual (1 Ano)'
+      : 'Assinatura Listto - Plano Mensal (1 Mês)';
 
     const names = (userName || 'Cliente Listto').trim().split(' ');
     const firstName = names[0] || 'Cliente';
@@ -75,8 +91,8 @@ export class SubscriptionsService {
         'X-Idempotency-Key': `pix-${userId || 'anon'}-${Date.now()}`,
       },
       body: JSON.stringify({
-        transaction_amount: 9.90,
-        description: 'Assinatura Listto Premium - 1 Mês',
+        transaction_amount: valor,
+        description,
         payment_method_id: 'pix',
         payer: {
           email,
@@ -85,7 +101,8 @@ export class SubscriptionsService {
         },
         metadata: {
           user_id: userId,
-          plano: 'Listto Premium',
+          plano: planoNome,
+          periodo,
         },
         ...(notificationUrl ? { notification_url: notificationUrl } : {}),
       }),
@@ -108,15 +125,24 @@ export class SubscriptionsService {
       qrCode: txData?.qr_code,
       qrCodeBase64: txData?.qr_code_base64,
       paymentId: data?.id,
-      valor: 9.90,
+      valor,
+      plano: planoNome,
+      periodo,
       expiracaoEmMinutos: 15,
     };
   }
 
-  async activateSubscription(userId: string, plano: string = 'Listto Premium') {
+  async activateSubscription(userId: string, plano: string = 'Plano Mensal') {
+    const isAnual = plano?.toLowerCase()?.includes('anual') || plano === '1 year';
+    const planoFinal = isAnual ? 'Plano Anual' : 'Plano Mensal';
     const agora = new Date();
     const proximaCobranca = new Date(agora);
-    proximaCobranca.setMonth(proximaCobranca.getMonth() + 1);
+
+    if (isAnual) {
+      proximaCobranca.setFullYear(proximaCobranca.getFullYear() + 1);
+    } else {
+      proximaCobranca.setMonth(proximaCobranca.getMonth() + 1);
+    }
 
     // Desativa assinaturas antigas se existirem
     await this.prisma.subscription.updateMany({
@@ -127,7 +153,7 @@ export class SubscriptionsService {
     const subscription = await this.prisma.subscription.create({
       data: {
         usuarioId: userId,
-        plano,
+        plano: planoFinal,
         status: 'ativa',
         inicio: agora,
         proximaCobranca,
@@ -137,7 +163,9 @@ export class SubscriptionsService {
     return {
       sucesso: true,
       isPremium: true,
+      isAssinante: true,
       plano: subscription.plano,
+      periodo: isAnual ? '1 year' : '1 month',
       status: subscription.status,
       subscription,
     };
@@ -160,9 +188,10 @@ export class SubscriptionsService {
     return {
       sucesso: true,
       isPremium: false,
+      isAssinante: false,
       plano: 'Plano Gratuito',
       status: 'cancelado',
-      message: 'Plano Premium cancelado com sucesso. Você retornou ao Plano Gratuito.',
+      message: 'Sua assinatura foi cancelada com sucesso. Você retornou ao Plano Gratuito.',
     };
   }
 
@@ -183,9 +212,10 @@ export class SubscriptionsService {
         const payment = await res.json();
         if (payment?.status === 'approved') {
           const userId = payment?.metadata?.user_id;
+          const planoDoPagamento = payment?.metadata?.plano || 'Plano Mensal';
           if (userId) {
-            await this.activateSubscription(userId, 'Listto Premium');
-            this.logger.log(`Assinatura ativada com sucesso para o usuário ${userId}`);
+            await this.activateSubscription(userId, planoDoPagamento);
+            this.logger.log(`Assinatura (${planoDoPagamento}) ativada com sucesso para o usuário ${userId}`);
           }
         }
       } catch (err) {

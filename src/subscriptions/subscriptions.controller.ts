@@ -12,6 +12,8 @@ import { SubscriptionsService } from './subscriptions.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 
+import { CreatePixPaymentDto } from './dto/create-pix-payment.dto.js';
+
 @Controller('subscriptions')
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
@@ -31,13 +33,14 @@ export class SubscriptionsController {
     @CurrentUser('userId') userId: string,
     @CurrentUser('email') email: string,
     @CurrentUser('nome') nome: string,
+    @Body() body?: CreatePixPaymentDto,
   ) {
-    return this.subscriptionsService.createPixPayment(userId, email, nome);
+    return this.subscriptionsService.createPixPayment(userId, email, nome, body?.plano);
   }
 
   @Post('mercadopago-pix')
-  createMercadoPagoPix() {
-    return this.subscriptionsService.createPixPayment();
+  createMercadoPagoPix(@Body() body?: CreatePixPaymentDto) {
+    return this.subscriptionsService.createPixPayment(undefined, undefined, undefined, body?.plano);
   }
 
   @Post('activate-test')
@@ -46,7 +49,7 @@ export class SubscriptionsController {
     @CurrentUser('userId') userId: string,
     @Body('plano') plano?: string,
   ) {
-    return this.subscriptionsService.activateSubscription(userId, plano || 'Listto Premium');
+    return this.subscriptionsService.activateSubscription(userId, plano || 'Plano Mensal');
   }
 
   @Post('cancel')
